@@ -11,15 +11,15 @@ def arg_parse():
     parser.add_argument('--random_seed', type=int, default=999)
 
     '''Datasets parameters'''
-    parser.add_argument('--data_dir', type=str, default='data',
+    parser.add_argument('--data_dir', type=str, default='dataset',
                         help="root path to data directory")
-    parser.add_argument('--workers', default=4, type=int,
+    parser.add_argument('--workers', default=1, type=int,
                        help="number of data loading workers (default: 4)")
 
     '''Training parameters'''
     parser.add_argument('--epoch', default=100, type=int,
                         help="num of total epochs")
-    parser.add_argument('--train_batch', default=8, type=int,
+    parser.add_argument('--train_batch', default=20, type=int,
                         help="train batch size")
     parser.add_argument('--val_epoch', default=10, type=int,
                         help="num of epochs a val is run")

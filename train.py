@@ -1,7 +1,7 @@
 import os
 import torch
 
-import parser
+import parser1
 import models
 import data
 
@@ -18,7 +18,7 @@ def save_model(model, save_path):
 
 if __name__ == '__main__':
 
-    args = parser.arg_parse()
+    args = parser1.arg_parse()
 
     '''create directory to save trained model and other info'''
     if not os.path.exists(args.save_dir):
@@ -67,6 +67,15 @@ if __name__ == '__main__':
         for idx, (imgs, cls) in enumerate(train_loader):
             train_info = 'Epoch: [{0}][{1}/{2}]'.format(epoch, idx + 1, len(train_loader))
             iters += 1
+
+            all_img = []
+            all_labels = []
+
+            for img_list, lab in zip(imgs, cls):
+                for i in range(len(img_list)):
+                    all_img.append(img_list[i])
+                    all_labels.append(lab)
+
 
             ''' move data to gpu '''
             imgs, cls = imgs.cuda(), cls.cuda()
