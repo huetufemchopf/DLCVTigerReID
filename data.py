@@ -42,7 +42,7 @@ class DATA(Dataset):
 
             last_num = -1
             cnt = 0
-            num = 2
+            num = 5
             self.data = []
             for i in range(len(data_S)):
                 if(data_S[i][0] == last_num) & (cnt < num):
@@ -64,8 +64,8 @@ class DATA(Dataset):
 
         ''' set up image trainsform '''
         self.transform = transforms.Compose([
-            transforms.Resize(200),
-            transforms.CenterCrop(200),
+            transforms.Resize(224),
+            transforms.CenterCrop(224),
             transforms.ToTensor(),  # (H,W,C)->(C,H,W), [0,255]->[0, 1.0] RGB->RGB
             transforms.Normalize(MEAN, STD)
         ])
