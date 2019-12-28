@@ -3,11 +3,12 @@ import torch
 
 import parser1
 import models
-from featureextractor import FeatureExtractor
+from featureextractor import FeatureExtractor, Model
 import data
 from evaluate import get_acc
 import numpy as np
 import torch.nn as nn
+from triplet_loss import TripletLoss, get_dist, get_dist_local
 
 from tensorboardX import SummaryWriter
 #from test import evaluate
@@ -49,11 +50,12 @@ if __name__ == '__main__':
                                              shuffle=False)
     ''' load model '''
     print('===> prepare model ...')
-    model = FeatureExtractor()
+    model = Model()
     model.cuda()  # load model to gpu
 
     ''' define loss '''
     criterion = nn.CrossEntropyLoss()
+    t_loss = TripletLoss()
 
     ''' setup optimizer '''
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
@@ -89,10 +91,20 @@ if __name__ == '__main__':
             all_img, all_labels = all_img.cuda(), all_labels.cuda()
 
             ''' forward path '''
-            output = model(all_img)
+            global_f, local_f, classes = model(all_img)
 
             ''' compute loss, backpropagation, update parameters '''
-            loss = criterion(output, all_labels)  # compute loss
+            # Global losses
+            dist_1_g, dist_2_g = get_dist(global_f, all_labels)
+            loss_g = t_loss(dist_1_g, dist_2_g)
+
+            # Local losses
+            dist_1_l, dist_2_l = get_dist_local(local_f, all_labels)
+            loss_l = t_loss(dist_1_l, dist_2_l)
+
+            loss_c = criterion(classes, all_labels)
+
+            loss = loss_g + loss_l + loss_c
 
             optimizer.zero_grad()  # set grad of all parameters to zero
             loss.backward()  # compute gradient for each parameters
@@ -120,4 +132,4 @@ if __name__ == '__main__':
 
 
         ''' save model '''
-        save_model(model, os.path.join(args.save_dir, 'model_{}.pth.tar'.format(epoch)))
+        #save_model(model, os.path.join(args.save_dir, 'model_{}.pth.tar'.format(epoch)))

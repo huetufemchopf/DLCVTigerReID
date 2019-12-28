@@ -1,4 +1,3 @@
-import torch
 import torch.nn as nn
 
 
@@ -46,4 +45,5 @@ class Net(nn.Module):
         x = self.fc(x)
 
         return x
+
 

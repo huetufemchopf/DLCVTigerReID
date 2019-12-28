@@ -33,20 +33,29 @@ class DATA(Dataset):
             data_S = data_F.values.tolist()
             data_S.sort(key=itemgetter(0))
             last_num = -1
+            idx = -1
+            for i in range(len(data_S)):
+                if (data_S[i][0] != last_num):
+                    idx += 1
+                    last_num = data_S[i][0]
+                data_S[i][0] = idx
+
+            last_num = -1
             cnt = 0
+            num = 2
             self.data = []
             for i in range(len(data_S)):
-                if(data_S[i][0] == last_num) & (cnt < 3):
+                if(data_S[i][0] == last_num) & (cnt < num):
                     cnt += 1
                 else:
                     self.data.append([])
                     cnt = 0
                 if i == (len(data_S)-1):
-                    if cnt != 3:
-                        for e in range(3-cnt):
+                    if cnt != num:
+                        for e in range(num-cnt):
                             self.data[-1].append(data_S[i-e-1])
-                elif (data_S[i][0] != data_S[i+1][0]) & (cnt != 3):
-                    for e in range(3-cnt):
+                elif (data_S[i][0] != data_S[i+1][0]) & (cnt != num):
+                    for e in range(num-cnt):
                         self.data[-1].append(data_S[i-e-1])
                 self.data[-1].append(data_S[i])
                 last_num = data_S[i][0]

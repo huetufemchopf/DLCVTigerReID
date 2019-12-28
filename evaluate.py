@@ -33,10 +33,10 @@ def get_acc(model, query, gallery):
         for g_img, g_name in gallery:
             g_img = g_img.cuda()
             q_name = g_name
-            g_out = model(g_img)
+            g_out, _, _ = model(g_img)
             for idx, (imgs, _) in enumerate(query):
                 imgs = imgs.cuda()
-                output = model(imgs)
+                output, _, _ = model(imgs)
                 q_arr.append(output)
 
         q_out = torch.cat(q_arr)
