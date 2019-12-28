@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import torchvision
 from torchvision import datasets, models, transforms
 
 class FeatureExtractor(nn.Module):

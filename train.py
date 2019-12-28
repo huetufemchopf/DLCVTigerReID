@@ -3,8 +3,9 @@ import torch
 
 import parser1
 import models
+from featureextractor import FeatureExtractor
 import data
-
+from evaluate import get_acc
 import numpy as np
 import torch.nn as nn
 
@@ -38,13 +39,17 @@ if __name__ == '__main__':
                                                batch_size=args.train_batch,
                                                num_workers=args.workers,
                                                shuffle=True)
-    val_loader = torch.utils.data.DataLoader(data.DATA(args, mode='query'),
-                                             batch_size=args.train_batch,
+    gallery_loader = torch.utils.data.DataLoader(data.DATA(args, mode='gallery'),
+                                             batch_size=40,
+                                             num_workers=args.workers,
+                                             shuffle=False)
+    query_loader = torch.utils.data.DataLoader(data.DATA(args, mode='query'),
+                                             batch_size=args.test_batch,
                                              num_workers=args.workers,
                                              shuffle=False)
     ''' load model '''
     print('===> prepare model ...')
-    model = models.Net(args)
+    model = FeatureExtractor()
     model.cuda()  # load model to gpu
 
     ''' define loss '''
@@ -57,17 +62,19 @@ if __name__ == '__main__':
     writer = SummaryWriter(os.path.join(args.save_dir, 'train_info'))
 
     ''' train model '''
-    print('===> start training ...')
     iters = 0
     best_acc = 0
+    long = len(train_loader)
+    #print_num = int(long/10)
+    print_num = 6
+
+    print('===> start training ...')
     for epoch in range(1, args.epoch + 1):
 
         model.train()
+        avg_loss = 0
 
         for idx, (imgs, cls) in enumerate(train_loader):
-            train_info = 'Epoch: [{0}][{1}/{2}]'.format(epoch, idx + 1, len(train_loader))
-            iters += 1
-
             all_img = []
             all_labels = []
 
@@ -76,29 +83,33 @@ if __name__ == '__main__':
                     all_img.append(img_list[i])
                     all_labels.append(lab)
 
-
             ''' move data to gpu '''
-            imgs, cls = imgs.cuda(), cls.cuda()
+            all_img = torch.stack(all_img)
+            all_labels = torch.stack(all_labels)
+            all_img, all_labels = all_img.cuda(), all_labels.cuda()
 
             ''' forward path '''
-            output = model(imgs)
+            output = model(all_img)
 
             ''' compute loss, backpropagation, update parameters '''
-            loss = criterion(output, cls)  # compute loss
+            loss = criterion(output, all_labels)  # compute loss
 
             optimizer.zero_grad()  # set grad of all parameters to zero
             loss.backward()  # compute gradient for each parameters
             optimizer.step()  # update parameters
-
+            avg_loss += loss
             ''' write out information to tensorboard '''
             writer.add_scalar('loss', loss.data.cpu().numpy(), iters)
-            train_info += ' loss: {:.4f}'.format(loss.data.cpu().numpy())
 
-            print(train_info)
+            if (idx+1) % print_num == 0:
+                print('epoch: %d/%d, [iter: %d / %d], Mean loss: %f' \
+                      % (epoch, args.epoch, idx + 1, long, avg_loss/print_num))
+                avg_loss = 0
 
         if epoch % args.val_epoch == 0:
             ''' evaluate the model '''
-            acc = evaluate(model, val_loader)
+            model.eval()
+            acc = get_acc(model, query_loader, gallery_loader)
             writer.add_scalar('val_acc', acc, iters)
             print('Epoch: [{}] ACC:{}'.format(epoch, acc))
 
@@ -106,6 +117,7 @@ if __name__ == '__main__':
             if acc > best_acc:
                 save_model(model, os.path.join(args.save_dir, 'model_best.pth.tar'))
                 best_acc = acc
+
 
         ''' save model '''
         save_model(model, os.path.join(args.save_dir, 'model_{}.pth.tar'.format(epoch)))
