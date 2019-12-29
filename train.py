@@ -91,7 +91,7 @@ if __name__ == '__main__':
             all_img, all_labels = all_img.cuda(), all_labels.cuda()
 
             ''' forward path '''
-            global_f, local_f, classes = model(all_img)
+            global_f, local_f, vertical_f, classes = model(all_img)
 
             ''' compute loss, backpropagation, update parameters '''
             # Global losses
@@ -102,9 +102,13 @@ if __name__ == '__main__':
             dist_1_l, dist_2_l = get_dist_local(local_f, all_labels)
             loss_l = t_loss(dist_1_l, dist_2_l)
 
+            # Local Vertical
+            dist_1_v, dist_2_v = get_dist_local(vertical_f, all_labels)
+            loss_v = t_loss(dist_1_v, dist_2_v)
+
             loss_c = criterion(classes, all_labels)
 
-            loss = loss_g + loss_l + loss_c
+            loss = (loss_g * 1) + (loss_l * 1) + loss_v # + loss_c
 
             optimizer.zero_grad()  # set grad of all parameters to zero
             loss.backward()  # compute gradient for each parameters
@@ -127,9 +131,11 @@ if __name__ == '__main__':
 
             ''' save best model '''
             if acc > best_acc:
-                save_model(model, os.path.join(args.save_dir, 'model_best.pth.tar'))
+                save_model(model, os.path.join(args.save_dir, 'model_best_'+str(args.lr*10000)+'.pth.tar'))
                 best_acc = acc
 
 
         ''' save model '''
         #save_model(model, os.path.join(args.save_dir, 'model_{}.pth.tar'.format(epoch)))
+
+    print('best acc:', best_acc)

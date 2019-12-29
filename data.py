@@ -29,11 +29,13 @@ class DATA(Dataset):
         for i in range(len(data_F)):
             data_F[1][i] = os.path.join(img_dir, data_F[1][i])
 
+        # Group Labels for the training set
         if mode == 'train':
             data_S = data_F.values.tolist()
             data_S.sort(key=itemgetter(0))
             last_num = -1
             idx = -1
+            # Change labels to go from 0 to number of different labels
             for i in range(len(data_S)):
                 if (data_S[i][0] != last_num):
                     idx += 1
@@ -42,7 +44,7 @@ class DATA(Dataset):
 
             last_num = -1
             cnt = 0
-            num = 5
+            num = 2
             self.data = []
             for i in range(len(data_S)):
                 if(data_S[i][0] == last_num) & (cnt < num):

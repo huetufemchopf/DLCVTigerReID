@@ -4,20 +4,20 @@ from torch.autograd import Variable
 
 
 class TripletLoss(object):
-  def __init__(self, margin=0.3):
-    self.margin = margin
-    if margin is not None:
-      self.ranking_loss = nn.MarginRankingLoss(margin=margin)
-    else:
-      self.ranking_loss = nn.SoftMarginLoss()
+    def __init__(self, margin=0.3):
+        self.margin = margin
+        if margin is not None:
+            self.ranking_loss = nn.MarginRankingLoss(margin=margin)
+        else:
+            self.ranking_loss = nn.SoftMarginLoss()
 
-  def __call__(self, dist_ap, dist_an):
-    y = Variable(dist_an.data.new().resize_as_(dist_an.data).fill_(1))
-    if self.margin is not None:
-      loss = self.ranking_loss(dist_an, dist_ap, y)
-    else:
-      loss = self.ranking_loss(dist_an - dist_ap, y)
-    return loss
+    def __call__(self, dist_ap, dist_an):
+        y = Variable(dist_an.data.new().resize_as_(dist_an.data).fill_(1))
+        if self.margin is not None:
+            loss = self.ranking_loss(dist_an, dist_ap, y)
+        else:
+            loss = self.ranking_loss(dist_an - dist_ap, y)
+        return loss
 
 def euclidean_dist(x, y):
     m, n = x.size(0), y.size(0)
@@ -38,8 +38,6 @@ def get_dist(imgs, labels):
 
     is_pos = labels.expand(N, N).eq(labels.expand(N, N).t())
     is_neg = labels.expand(N, N).ne(labels.expand(N, N).t())
-
-    abc = dist_mat[is_pos].contiguous()
 
     dist_ap, relative_p_inds = torch.max(
         dist_mat[is_pos].contiguous().view(N, -1), 1, keepdim=True)

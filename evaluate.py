@@ -29,24 +29,27 @@ def get_acc(model, query, gallery):
     with torch.no_grad():
         q_arr = []
         q_name = 0
-        loss = torch.nn.MSELoss()
+        loss = torch.nn.CosineSimilarity(dim = 0)
+        #loss = torch.nn.MSELoss()
         for g_img, g_name in gallery:
             g_img = g_img.cuda()
             q_name = g_name
-            g_out, _, _ = model(g_img)
+            g_out, _, _, _ = model(g_img)
             for idx, (imgs, _) in enumerate(query):
                 imgs = imgs.cuda()
-                output, _, _ = model(imgs)
+                output, _, _, _ = model(imgs)
                 q_arr.append(output)
 
         q_out = torch.cat(q_arr)
         preds = []
         for q in q_out:
-            min_e = 10000
+            # min_e has to be 0 for cosine similarity and a big number for MSELoss
+            min_e = 0
             pred = ''
             for g, n in zip(g_out, q_name):
                 error = loss(q, g)
-                if error < min_e:
+                # > for cosine, < for MSE
+                if error > min_e:
                     min_e = error
                     pred = n
             preds.append(pred)
