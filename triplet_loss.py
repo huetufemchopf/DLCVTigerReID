@@ -35,15 +35,23 @@ def get_dist(imgs, labels):
     assert len(dist_mat.size()) == 2
     assert dist_mat.size(0) == dist_mat.size(1)
     N = dist_mat.size(0)
-
     is_pos = labels.expand(N, N).eq(labels.expand(N, N).t())
     is_neg = labels.expand(N, N).ne(labels.expand(N, N).t())
+    pr3 = dist_mat[is_pos].contiguous()
+    pr4 = dist_mat[is_neg].contiguous()
+    if(len(pr3) % N != 0):
+        rem = len(pr3) % N
+        pr3 = pr3[0:(len(pr3)-rem)]
+
+    if (len(pr4) % N != 0):
+        rem = len(pr4) % N
+        pr4 = pr4[0:(len(pr4) - rem)]
 
     dist_ap, relative_p_inds = torch.max(
-        dist_mat[is_pos].contiguous().view(N, -1), 1, keepdim=True)
+        pr3.view(N, -1), 1, keepdim=True)
 
     dist_an, relative_n_inds = torch.min(
-        dist_mat[is_neg].contiguous().view(N, -1), 1, keepdim=True)
+        pr4.view(N, -1), 1, keepdim=True)
     # shape [N]
     dist_ap = dist_ap.squeeze(1)
     dist_an = dist_an.squeeze(1)
@@ -94,11 +102,21 @@ def get_dist_local(local_feat,labels):
     is_pos = labels.expand(N, N).eq(labels.expand(N, N).t())
     is_neg = labels.expand(N, N).ne(labels.expand(N, N).t())
 
+    pr3 = dist_mat[is_pos].contiguous()
+    pr4 = dist_mat[is_neg].contiguous()
+    if (len(pr3) % N != 0):
+        rem = len(pr3) % N
+        pr3 = pr3[0:(len(pr3) - rem)]
+
+    if (len(pr4) % N != 0):
+        rem = len(pr4) % N
+        pr4 = pr4[0:(len(pr4) - rem)]
+
     dist_ap, relative_p_inds = torch.max(
-        dist_mat[is_pos].contiguous().view(N, -1), 1, keepdim=True)
+        pr3.view(N, -1), 1, keepdim=True)
 
     dist_an, relative_n_inds = torch.min(
-        dist_mat[is_neg].contiguous().view(N, -1), 1, keepdim=True)
+        pr4.view(N, -1), 1, keepdim=True)
     # shape [N]
     dist_ap = dist_ap.squeeze(1)
     dist_an = dist_an.squeeze(1)

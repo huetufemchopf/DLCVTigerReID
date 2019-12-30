@@ -14,6 +14,26 @@ STD = [0.229, 0.224, 0.225]
 def read_csv(csv_path):
     return pd.read_csv(csv_path, header=None, index_col=False)
 
+def trans(img):
+    w, h = img.size
+    if h > w:
+        diff = int((h-w)/2)
+        transform_input = transforms.Compose([
+            transforms.Pad((diff, 0), fill=0, padding_mode='constant'),
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize(MEAN, STD)
+        ])
+    else:
+        diff = int((w-h)/2)
+        transform_input = transforms.Compose([
+            transforms.Pad((0, diff), fill=0, padding_mode='constant'),
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize(MEAN, STD)
+        ])
+    return transform_input(img)
+
 
 class DATA(Dataset):
     def __init__(self, args, mode='train'):
@@ -33,6 +53,8 @@ class DATA(Dataset):
         if mode == 'train':
             data_S = data_F.values.tolist()
             data_S.sort(key=itemgetter(0))
+
+
             last_num = -1
             idx = -1
             # Change labels to go from 0 to number of different labels
@@ -44,7 +66,7 @@ class DATA(Dataset):
 
             last_num = -1
             cnt = 0
-            num = 2
+            num = 3
             self.data = []
             for i in range(len(data_S)):
                 if(data_S[i][0] == last_num) & (cnt < num):
@@ -63,12 +85,20 @@ class DATA(Dataset):
                 last_num = data_S[i][0]
         else:
             self.data = data_F
-
+        img_size = 224
         ''' set up image trainsform '''
         self.transform = transforms.Compose([
-            transforms.Resize(224),
-            transforms.CenterCrop(224),
-            transforms.ToTensor(),  # (H,W,C)->(C,H,W), [0,255]->[0, 1.0] RGB->RGB
+            transforms.Resize(img_size),
+            transforms.RandomHorizontalFlip(p=0.5),
+            transforms.CenterCrop(img_size),
+            transforms.ToTensor(),
+            transforms.Normalize(MEAN, STD)
+        ])
+
+        self.transform_t = transforms.Compose([
+            transforms.Resize(img_size),
+            transforms.CenterCrop(img_size),
+            transforms.ToTensor(),
             transforms.Normalize(MEAN, STD)
         ])
 
@@ -90,7 +120,7 @@ class DATA(Dataset):
             images = torch.stack(images)
         else:
             img = Image.open(self.data[1][idx]).convert('RGB')
-            images = self.transform(img)
+            images = self.transform_t(img)
             cls = self.imgs_names[idx]
 
         ''' read image '''

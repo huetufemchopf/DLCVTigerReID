@@ -69,12 +69,23 @@ if __name__ == '__main__':
     long = len(train_loader)
     #print_num = int(long/10)
     print_num = 6
+    lr = args.lr
 
     print('===> start training ...')
     for epoch in range(1, args.epoch + 1):
 
         model.train()
         avg_loss = 0
+        # Changing learning rate
+        lr_diff = ((args.lr*10)-args.lr)/25
+        if (epoch < 26) & (epoch != 1):
+            lr = lr + lr_diff
+        elif (epoch > 25) & (epoch % 30 == 0):
+            lr = lr * 0.5
+
+        print('Changing lr to:', lr)
+        for g in optimizer.param_groups:
+            g['lr'] = lr
 
         for idx, (imgs, cls) in enumerate(train_loader):
             all_img = []
@@ -86,12 +97,14 @@ if __name__ == '__main__':
                     all_labels.append(lab)
 
             ''' move data to gpu '''
-            all_img = torch.stack(all_img)
+            all_img = torch.stack(all_img).cuda()
             all_labels = torch.stack(all_labels)
-            all_img, all_labels = all_img.cuda(), all_labels.cuda()
+            #all_img, all_labels = all_img.cuda(), all_labels.cuda()
 
             ''' forward path '''
             global_f, local_f, vertical_f, classes = model(all_img)
+
+            global_f, local_f, vertical_f, classes = global_f.cpu(), local_f.cpu(), vertical_f.cpu(), classes.cpu()
 
             ''' compute loss, backpropagation, update parameters '''
             # Global losses
@@ -108,9 +121,9 @@ if __name__ == '__main__':
 
             loss_c = criterion(classes, all_labels)
 
-            loss = (loss_g * 1) + (loss_l * 1) + loss_v # + loss_c
+            loss = (loss_g * 2) + (loss_l * 1.5) + (loss_v * 1) + (loss_c * 1)
 
-            optimizer.zero_grad()  # set grad of all parameters to zero
+            model.zero_grad()  # set grad of all parameters to zero
             loss.backward()  # compute gradient for each parameters
             optimizer.step()  # update parameters
             avg_loss += loss
@@ -125,9 +138,10 @@ if __name__ == '__main__':
         if epoch % args.val_epoch == 0:
             ''' evaluate the model '''
             model.eval()
-            acc = get_acc(model, query_loader, gallery_loader)
+            acc, acc_c = get_acc(model, query_loader, gallery_loader)
             writer.add_scalar('val_acc', acc, iters)
-            print('Epoch: [{}] ACC:{}'.format(epoch, acc))
+            print('Epoch: [{}] ACC with MSE:{}'.format(epoch, acc))
+            print('Epoch: [{}] ACC with Cosine:{}'.format(epoch, acc_c))
 
             ''' save best model '''
             if acc > best_acc:

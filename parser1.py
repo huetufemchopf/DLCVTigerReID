@@ -8,7 +8,7 @@ def arg_parse():
     '''Enviroment parameter'''
     parser.add_argument('--gpu', default=0, type=int,
                         help='gpu device ids for CUDA_VISIBLE_DEVICES')
-    parser.add_argument('--random_seed', type=int, default=123)
+    parser.add_argument('--random_seed', type=int, default=546)
 
     '''Datasets parameters'''
     parser.add_argument('--data_dir', type=str, default='dataset',
@@ -29,9 +29,9 @@ def arg_parse():
 
 
     '''Optimizer params'''
-    parser.add_argument('--lr', default=0.0001, type=float,
+    parser.add_argument('--lr', default=0.00005, type=float,
                        help="initial learning rate")
-    parser.add_argument('--weight-decay', default=0.0005, type=float,
+    parser.add_argument('--weight-decay', default=0.0002, type=float,
                         help="initial learning rate")
 
     '''Resume trained model for test'''
