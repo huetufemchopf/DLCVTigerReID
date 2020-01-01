@@ -1,18 +1,19 @@
 import os
 import pandas as pd
-
 import torchvision.transforms as transforms
 from operator import itemgetter
 from torch.utils.data import Dataset
 from PIL import Image
-import numpy as np
 import torch
+
 
 MEAN = [0.485, 0.456, 0.406]
 STD = [0.229, 0.224, 0.225]
 
+
 def read_csv(csv_path):
     return pd.read_csv(csv_path, header=None, index_col=False)
+
 
 def trans(img):
     w, h = img.size
@@ -54,19 +55,18 @@ class DATA(Dataset):
             data_S = data_F.values.tolist()
             data_S.sort(key=itemgetter(0))
 
-
             last_num = -1
             idx = -1
             # Change labels to go from 0 to number of different labels
             for i in range(len(data_S)):
-                if (data_S[i][0] != last_num):
+                if data_S[i][0] != last_num:
                     idx += 1
                     last_num = data_S[i][0]
                 data_S[i][0] = idx
 
             last_num = -1
             cnt = 0
-            num = 3
+            num = args.label_group - 1
             self.data = []
             for i in range(len(data_S)):
                 if(data_S[i][0] == last_num) & (cnt < num):
@@ -89,7 +89,7 @@ class DATA(Dataset):
         ''' set up image trainsform '''
         self.transform = transforms.Compose([
             transforms.Resize(img_size),
-            transforms.RandomHorizontalFlip(p=0.5),
+            transforms.RandomHorizontalFlip(p=0.1),
             transforms.CenterCrop(img_size),
             transforms.ToTensor(),
             transforms.Normalize(MEAN, STD)
@@ -101,7 +101,6 @@ class DATA(Dataset):
             transforms.ToTensor(),
             transforms.Normalize(MEAN, STD)
         ])
-
 
     def __len__(self):
         return len(self.data)

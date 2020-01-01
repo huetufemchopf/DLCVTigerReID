@@ -19,6 +19,7 @@ class TripletLoss(object):
             loss = self.ranking_loss(dist_an - dist_ap, y)
         return loss
 
+
 def euclidean_dist(x, y):
     m, n = x.size(0), y.size(0)
     xx = torch.pow(x, 2).sum(1, keepdim=True).expand(m, n)
@@ -28,8 +29,8 @@ def euclidean_dist(x, y):
     dist = dist.clamp(min=1e-12).sqrt()  # for numerical stability
     return dist
 
-def get_dist(imgs, labels):
 
+def get_dist(imgs, labels):
     dist_mat = euclidean_dist(imgs, imgs)
 
     assert len(dist_mat.size()) == 2
@@ -57,6 +58,7 @@ def get_dist(imgs, labels):
     dist_an = dist_an.squeeze(1)
 
     return dist_ap, dist_an
+
 
 def local_dist(x, y):
 
@@ -91,6 +93,7 @@ def shortest_dist(dist_mat):
     dist = dist[-1][-1]
     return dist
 
+
 def get_dist_local(local_feat,labels):
 
     dist_mat = local_dist(local_feat, local_feat)
@@ -104,11 +107,11 @@ def get_dist_local(local_feat,labels):
 
     pr3 = dist_mat[is_pos].contiguous()
     pr4 = dist_mat[is_neg].contiguous()
-    if (len(pr3) % N != 0):
+    if len(pr3) % N != 0:
         rem = len(pr3) % N
         pr3 = pr3[0:(len(pr3) - rem)]
 
-    if (len(pr4) % N != 0):
+    if len(pr4) % N != 0:
         rem = len(pr4) % N
         pr4 = pr4[0:(len(pr4) - rem)]
 

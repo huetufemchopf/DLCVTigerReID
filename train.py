@@ -2,20 +2,19 @@ import os
 import torch
 
 import parser1
-import models
-from featureextractor import FeatureExtractor, Model
+from featureextractor import FeatureExtractor, Model, Model2
 import data
-from evaluate import get_acc
 import numpy as np
 import torch.nn as nn
-from triplet_loss import TripletLoss, get_dist, get_dist_local
-
 from tensorboardX import SummaryWriter
-#from test import evaluate
+
+from triplet_loss import TripletLoss, get_dist, get_dist_local
+from evaluate import get_acc
+from utils import loader
 
 
-def save_model(model, save_path):
-    torch.save(model.state_dict(), save_path)
+def save_model(mod, save_path):
+    torch.save(mod.state_dict(), save_path)
 
 
 if __name__ == '__main__':
@@ -36,18 +35,7 @@ if __name__ == '__main__':
 
     ''' load dataset and prepare data loader '''
     print('===> prepare dataloader ...')
-    train_loader = torch.utils.data.DataLoader(data.DATA(args, mode='train'),
-                                               batch_size=args.train_batch,
-                                               num_workers=args.workers,
-                                               shuffle=True)
-    gallery_loader = torch.utils.data.DataLoader(data.DATA(args, mode='gallery'),
-                                             batch_size=40,
-                                             num_workers=args.workers,
-                                             shuffle=False)
-    query_loader = torch.utils.data.DataLoader(data.DATA(args, mode='query'),
-                                             batch_size=args.test_batch,
-                                             num_workers=args.workers,
-                                             shuffle=False)
+    train_loader, gallery_loader, query_loader = loader(args)
     ''' load model '''
     print('===> prepare model ...')
     model = Model()
@@ -66,6 +54,7 @@ if __name__ == '__main__':
     ''' train model '''
     iters = 0
     best_acc = 0
+    best_acc_cos = 0
     long = len(train_loader)
     #print_num = int(long/10)
     print_num = 6
@@ -76,37 +65,47 @@ if __name__ == '__main__':
 
         model.train()
         avg_loss = 0
-        # Changing learning rate
-        lr_diff = ((args.lr*10)-args.lr)/25
-        if (epoch < 26) & (epoch != 1):
-            lr = lr + lr_diff
-        elif (epoch > 25) & (epoch % 30 == 0):
-            lr = lr * 0.5
-
-        print('Changing lr to:', lr)
-        for g in optimizer.param_groups:
-            g['lr'] = lr
+        if args.lr_change:
+            # Changing learning rate
+            lr_diff = ((args.lr*10)-args.lr)/24
+            if (epoch < 26) & (epoch != 1):
+                lr = lr + lr_diff
+                print('Changing lr to:', lr)
+                for g in optimizer.param_groups:
+                    g['lr'] = lr
+            elif (epoch > 25) & (epoch % 40 == 0):
+                lr = lr * 0.5
+                print('Changing lr to:', lr)
+                for g in optimizer.param_groups:
+                    g['lr'] = lr
 
         for idx, (imgs, cls) in enumerate(train_loader):
-            all_img = []
-            all_labels = []
+            if args.grouping:
+                all_img = []
+                all_labels = []
 
-            for img_list, lab in zip(imgs, cls):
-                for i in range(len(img_list)):
-                    all_img.append(img_list[i])
-                    all_labels.append(lab)
+                for img_list, lab in zip(imgs, cls):
+                    for i in range(len(img_list)):
+                        all_img.append(img_list[i])
+                        all_labels.append(lab)
 
-            ''' move data to gpu '''
-            all_img = torch.stack(all_img).cuda()
-            all_labels = torch.stack(all_labels)
-            #all_img, all_labels = all_img.cuda(), all_labels.cuda()
+                all_img = torch.stack(all_img).cuda()
+                all_labels = torch.stack(all_labels)
+
+            else:
+                all_img = imgs.cuda()
+                all_labels = cls
 
             ''' forward path '''
-            global_f, local_f, vertical_f, classes = model(all_img)
+            global_f, local_f, vertical_f, classes = model(all_img) #For model 1
 
-            global_f, local_f, vertical_f, classes = global_f.cpu(), local_f.cpu(), vertical_f.cpu(), classes.cpu()
+            #global_f, local_f, classes = model(all_img) #For model 2
 
-            ''' compute loss, backpropagation, update parameters '''
+            global_f, local_f, vertical_f, classes = global_f.cpu(), local_f.cpu(), vertical_f.cpu(), classes.cpu() #For model 1
+
+            #global_f, local_f, classes = global_f.cpu(), local_f.cpu(), classes.cpu()
+
+            ''' compute loss, back propagation, update parameters '''
             # Global losses
             dist_1_g, dist_2_g = get_dist(global_f, all_labels)
             loss_g = t_loss(dist_1_g, dist_2_g)
@@ -115,13 +114,16 @@ if __name__ == '__main__':
             dist_1_l, dist_2_l = get_dist_local(local_f, all_labels)
             loss_l = t_loss(dist_1_l, dist_2_l)
 
-            # Local Vertical
-            dist_1_v, dist_2_v = get_dist_local(vertical_f, all_labels)
-            loss_v = t_loss(dist_1_v, dist_2_v)
+            # Local Vertical losses (only with model1
 
+            #dist_1_v, dist_2_v = get_dist_local(vertical_f, all_labels)
+            #loss_v = t_loss(dist_1_v, dist_2_v)
+
+
+            # Class losses
             loss_c = criterion(classes, all_labels)
 
-            loss = (loss_g * 2) + (loss_l * 1.5) + (loss_v * 1) + (loss_c * 1)
+            loss = (loss_g * args.global_mult) + (loss_l * args.local_mult) + (loss_c * args.class_mult) #+ (loss_v * args.vertical_mult)
 
             model.zero_grad()  # set grad of all parameters to zero
             loss.backward()  # compute gradient for each parameters
@@ -140,16 +142,17 @@ if __name__ == '__main__':
             model.eval()
             acc, acc_c = get_acc(model, query_loader, gallery_loader)
             writer.add_scalar('val_acc', acc, iters)
-            print('Epoch: [{}] ACC with MSE:{}'.format(epoch, acc))
-            print('Epoch: [{}] ACC with Cosine:{}'.format(epoch, acc_c))
+            print('Epoch: [{}] ACC with MSE:{} (max:{})'.format(epoch, acc, best_acc))
+            print('Epoch: [{}] ACC with Cosine:{} (max:{})'.format(epoch, acc_c, best_acc_cos))
 
             ''' save best model '''
             if acc > best_acc:
-                save_model(model, os.path.join(args.save_dir, 'model_best_'+str(args.lr*10000)+'.pth.tar'))
+                save_model(model, os.path.join(args.save_dir, 'model_best_MSE.pth.tar'))
                 best_acc = acc
 
+            if acc_c > best_acc_cos:
+                save_model(model, os.path.join(args.save_dir, 'model_best_Cos.pth.tar'))
+                best_acc_cos = acc_c
 
-        ''' save model '''
-        #save_model(model, os.path.join(args.save_dir, 'model_{}.pth.tar'.format(epoch)))
-
-    print('best acc:', best_acc)
+    print('best acc for MSE:', best_acc)
+    print('best acc for Cos:', best_acc_cos)

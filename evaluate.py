@@ -7,8 +7,10 @@ from numpy import array
 
 from sklearn.metrics import accuracy_score
 
+
 def read_csv(csv_path):
     return pd.read_csv(csv_path, header=None, index_col=False)
+
 
 def evaluate(query, gallery, pred):
     
@@ -67,6 +69,7 @@ def get_acc(model, query, gallery):
     acc_c = evaluate(q_csv.values, g_csv.values, array(preds_c))
     return acc, acc_c
 
+
 if __name__ == '__main__':
 
     '''argument parser'''
@@ -80,9 +83,7 @@ if __name__ == '__main__':
     query = read_csv('dataset/query.csv')
     gallery = read_csv('dataset/gallery.csv')
     pred = read_csv('prueba.csv')
-    
 
     rank1 = evaluate(query.values, gallery.values, pred.values)
     
     print('===> rank1: {}%'.format(rank1))
-
