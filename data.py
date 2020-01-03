@@ -146,15 +146,14 @@ class DATA2(Dataset):
             data_S = data_F.values.tolist()
             data_S.sort(key=itemgetter(0))
 
-            last_num = -1
-            idx = -1
             # Change labels to go from 0 to number of different labels
+            '''
             for i in range(len(data_S)):
                 if data_S[i][0] != last_num:
                     idx += 1
                     last_num = data_S[i][0]
                 data_S[i][0] = idx
-
+            '''
             last_num = -1
             self.data = []
             for i in range(len(data_S)):
@@ -167,15 +166,15 @@ class DATA2(Dataset):
         img_size = 224
         ''' set up image trainsform '''
         self.transform = transforms.Compose([
-            transforms.Resize(256),
-            transforms.RandomHorizontalFlip(p=0.5),
+            transforms.Resize(img_size),
+            #transforms.RandomHorizontalFlip(p=0.5),
             transforms.CenterCrop(img_size),
             transforms.ToTensor(),
             transforms.Normalize(MEAN, STD)
         ])
 
         self.transform_t = transforms.Compose([
-            transforms.Resize(256),
+            transforms.Resize(img_size),
             transforms.CenterCrop(img_size),
             transforms.ToTensor(),
             transforms.Normalize(MEAN, STD)

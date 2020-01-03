@@ -11,7 +11,7 @@ from triplet_loss import TripletLoss, get_dist, get_dist_local
 from evaluate import get_acc
 from utils import loader, group_imgs
 
-mgpus = True
+mgpus = False
 
 def save_model(mod, save_path):
     if mgpus:
@@ -73,6 +73,7 @@ if __name__ == '__main__':
         avg_loss = 0
         if args.lr_change:
             # Changing learning rate
+            '''
             lr_diff = ((args.lr*10)-args.lr)/args.lr_epochs
             if (epoch < args.lr_epochs+2) & (epoch != 1):
                 lr = lr + lr_diff
@@ -84,7 +85,11 @@ if __name__ == '__main__':
                 print('Changing lr to:', lr)
                 for g in optimizer.param_groups:
                     g['lr'] = lr
-
+            '''
+            lr = lr * 0.994
+            print('Changing lr to:', lr)
+            for g in optimizer.param_groups:
+                g['lr'] = lr
         for idx, (imgs, cls) in enumerate(train_loader):
             if args.grouping:
                 all_img, all_labels = group_imgs(imgs, cls)

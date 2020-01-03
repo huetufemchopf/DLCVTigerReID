@@ -9,7 +9,7 @@ import torch.nn.functional as F
 class Model(nn.Module):
     def __init__(self, local_conv_out_channels=128, num_classes=1000):
         super(Model, self).__init__()
-        self.base = models.resnet152(pretrained=True)
+        self.base = models.resnet50(pretrained=True)
         self.base = nn.Sequential(*list(self.base.children())[:-2])
 
         planes = 2048
