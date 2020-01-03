@@ -5,27 +5,12 @@ import torch.nn.init as init
 import torch.nn.functional as F
 
 
-# simple resnet model
-class FeatureExtractor(nn.Module):
-
-    def __init__(self):
-        super(FeatureExtractor, self).__init__()
-
-        self.resnet50 = models.resnet50(pretrained=True)
-        vec_length = self.resnet50.fc.in_features
-        self.resnet50.fc = nn.Linear(vec_length, 2048)
-
-    def forward(self, im):
-        x = self.resnet50(im)
-        return x
-
-
 # Model with global and local (vertical and horizontal) features
 class Model(nn.Module):
     def __init__(self, local_conv_out_channels=128, num_classes=1000):
         super(Model, self).__init__()
-        self.base = models.resnet50(pretrained=True)
-        self.base =nn.Sequential(*list(self.base.children())[:-2])
+        self.base = models.resnet152(pretrained=True)
+        self.base = nn.Sequential(*list(self.base.children())[:-2])
 
         planes = 2048
         self.bn = nn.BatchNorm1d(planes)
