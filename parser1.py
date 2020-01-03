@@ -19,14 +19,14 @@ def arg_parse():
     '''Training parameters'''
     parser.add_argument('--epoch', default=500, type=int,
                         help="num of total epochs")
-    parser.add_argument('--train_batch', default=10, type=int,
+    parser.add_argument('--train_batch', default=15, type=int,
                         help="train batch size")
     parser.add_argument('--test_batch', default=40, type=int,
                         help="query batch size")
     parser.add_argument('--val_epoch', default=4, type=int,
                         help="num of epochs a val is run")
     parser.add_argument('--save_dir', type=str, default='log')
-    parser.add_argument('--label_group', default=3, type=int,
+    parser.add_argument('--label_group', default=6, type=int,
                         help="Number of grouped images with the same label")
     parser.add_argument('--global_mult', default=1.7, type=float,
                         help="Multiplyer of global losses")
