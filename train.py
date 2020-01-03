@@ -2,15 +2,14 @@ import os
 import torch
 
 import parser1
-from featureextractor import FeatureExtractor, Model, Model2
-import data
+from featureextractor import Model, Model2
 import numpy as np
 import torch.nn as nn
 from tensorboardX import SummaryWriter
 
 from triplet_loss import TripletLoss, get_dist, get_dist_local
 from evaluate import get_acc
-from utils import loader
+from utils import loader, group_imgs
 
 mgpus = True
 
@@ -22,8 +21,6 @@ def save_model(mod, save_path):
 
 
 if __name__ == '__main__':
-
-
 
     args = parser1.arg_parse()
 
@@ -47,7 +44,7 @@ if __name__ == '__main__':
     model = Model()
     if mgpus:
         model = torch.nn.DataParallel(model, device_ids=list([0,1])).cuda()
-    elif mgpus == False:
+    elif not mgpus:
         model.cuda()  # load model to gpu
 
     ''' define loss '''
@@ -65,8 +62,8 @@ if __name__ == '__main__':
     best_acc = 0
     best_acc_cos = 0
     long = len(train_loader)
-    #print_num = int(long/10)
-    print_num = 6
+    print_num = int(long/2)
+    #print_num = 6
     lr = args.lr
 
     print('===> start training ...')
@@ -76,13 +73,13 @@ if __name__ == '__main__':
         avg_loss = 0
         if args.lr_change:
             # Changing learning rate
-            lr_diff = ((args.lr*10)-args.lr)/24
-            if (epoch < 26) & (epoch != 1):
+            lr_diff = ((args.lr*10)-args.lr)/args.lr_epochs
+            if (epoch < args.lr_epochs+2) & (epoch != 1):
                 lr = lr + lr_diff
                 print('Changing lr to:', lr)
                 for g in optimizer.param_groups:
                     g['lr'] = lr
-            elif (epoch > 25) & (epoch % 40 == 0):
+            elif (epoch > args.lr_epochs) & (epoch % 100 == 0):
                 lr = lr * 0.5
                 print('Changing lr to:', lr)
                 for g in optimizer.param_groups:
@@ -90,28 +87,14 @@ if __name__ == '__main__':
 
         for idx, (imgs, cls) in enumerate(train_loader):
             if args.grouping:
-                all_img = []
-                all_labels = []
-
-                for img_list, lab in zip(imgs, cls):
-                    for i in range(len(img_list)):
-                        all_img.append(img_list[i])
-                        all_labels.append(lab)
-
-                all_img = torch.stack(all_img).cuda()
-                all_labels = torch.stack(all_labels)
-
+                all_img, all_labels = group_imgs(imgs, cls)
             else:
-                all_img = imgs.cuda()
-                all_labels = cls
+                all_img, all_labels = imgs.cuda(), cls
 
             ''' forward path '''
             global_f, local_f, vertical_f, classes = model(all_img) #For model 1
-
-            #global_f, local_f, classes = model(all_img) #For model 2
-
             global_f, local_f, vertical_f, classes = global_f.cpu(), local_f.cpu(), vertical_f.cpu(), classes.cpu() #For model 1
-
+            # global_f, local_f, classes = model(all_img) #For model 2
             #global_f, local_f, classes = global_f.cpu(), local_f.cpu(), classes.cpu()
 
             ''' compute loss, back propagation, update parameters '''
@@ -123,16 +106,14 @@ if __name__ == '__main__':
             dist_1_l, dist_2_l = get_dist_local(local_f, all_labels)
             loss_l = t_loss(dist_1_l, dist_2_l)
 
-            # Local Vertical losses (only with model1
-
-            #dist_1_v, dist_2_v = get_dist_local(vertical_f, all_labels)
-            #loss_v = t_loss(dist_1_v, dist_2_v)
-
+            # Local Vertical losses (only with model1)
+            dist_1_v, dist_2_v = get_dist_local(vertical_f, all_labels)
+            loss_v = t_loss(dist_1_v, dist_2_v)
 
             # Class losses
             loss_c = criterion(classes, all_labels)
 
-            loss = (loss_g * args.global_mult) + (loss_l * args.local_mult) + (loss_c * args.class_mult) #+ (loss_v * args.vertical_mult)
+            loss = (loss_g * args.global_mult) + (loss_l * args.local_mult) + (loss_c * args.class_mult) + (loss_v * args.vertical_mult)
 
             model.zero_grad()  # set grad of all parameters to zero
             loss.backward()  # compute gradient for each parameters
