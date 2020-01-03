@@ -19,11 +19,11 @@ def arg_parse():
     '''Training parameters'''
     parser.add_argument('--epoch', default=500, type=int,
                         help="num of total epochs")
-    parser.add_argument('--train_batch', default=10, type=int,
+    parser.add_argument('--train_batch', default=5, type=int,
                         help="train batch size")
     parser.add_argument('--test_batch', default=40, type=int,
                         help="query batch size")
-    parser.add_argument('--val_epoch', default=4, type=int,
+    parser.add_argument('--val_epoch', default=3, type=int,
                         help="num of epochs a val is run")
     parser.add_argument('--save_dir', type=str, default='log')
     parser.add_argument('--label_group', default=3, type=int,
