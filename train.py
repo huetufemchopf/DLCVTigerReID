@@ -11,12 +11,18 @@ from triplet_loss import TripletLoss, get_dist, get_dist_local
 from evaluate import get_acc
 from utils import loader, group_imgs
 
+mgpus = True
 
 def save_model(mod, save_path):
-    torch.save(mod.state_dict(), save_path)
+    if mgpus:
+        torch.save(mod.module.state_dict(), save_path)
+    elif mgpus == False:
+        torch.save(mod.state_dict(), save_path)
 
 
 if __name__ == '__main__':
+
+
 
     args = parser1.arg_parse()
 
@@ -38,7 +44,10 @@ if __name__ == '__main__':
     ''' load model '''
     print('===> prepare model ...')
     model = Model()
-    model.cuda()  # load model to gpu
+    if mgpus:
+        model = torch.nn.DataParallel(model, device_ids=list([0,1])).cuda()
+    elif mgpus == False:
+        model.cuda()  # load model to gpu
 
     ''' define loss '''
     criterion = nn.CrossEntropyLoss()
