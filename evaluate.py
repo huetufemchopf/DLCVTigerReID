@@ -42,10 +42,10 @@ def get_acc(model, query, gallery):
                 output, _, _, _ = model(imgs)
                 q_arr.append(output)
 
-        q_out = torch.cat(q_arr)
+        q_arr = torch.cat(q_arr)
         preds = []
         preds_c = []
-        for q in q_out:
+        for q in q_arr:
             # min_e has to be 0 for cosine similarity and a big number for MSELoss
             min_e = 9999
             pred = ''
