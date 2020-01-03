@@ -11,7 +11,7 @@ from triplet_loss import TripletLoss, get_dist, get_dist_local
 from evaluate import get_acc
 from utils import loader, group_imgs
 
-mgpus = False
+mgpus = True
 
 def save_model(mod, save_path):
     if mgpus:
