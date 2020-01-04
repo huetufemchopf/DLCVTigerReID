@@ -23,7 +23,7 @@ def arg_parse():
                         help="train batch size")
     parser.add_argument('--test_batch', default=40, type=int,
                         help="query batch size")
-    parser.add_argument('--val_epoch', default=4, type=int,
+    parser.add_argument('--val_epoch', default=2, type=int,
                         help="num of epochs a val is run")
     parser.add_argument('--save_dir', type=str, default='log')
     parser.add_argument('--label_group', default=3, type=int,
@@ -34,12 +34,12 @@ def arg_parse():
                         help="Multiplyer of local losses")
     parser.add_argument('--class_mult', default=1.5, type=float,
                         help="Multiplyer of class losses")
-    parser.add_argument('--vertical_mult', default=0, type=float,
+    parser.add_argument('--vertical_mult', default=0.2, type=float,
                         help="Multiplyer of vertical losses")
 
 
     '''Optimizer params'''
-    parser.add_argument('--lr', default=0.0002, type=float,
+    parser.add_argument('--lr', default=0.00025, type=float,
                        help="initial learning rate")
     parser.add_argument('--weight-decay', default=0.0005, type=float,
                         help="initial Weight Decay")
