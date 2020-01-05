@@ -11,24 +11,22 @@ def arg_parse():
     parser.add_argument('--random_seed', type=int, default=546)
 
     '''Datasets parameters'''
-    parser.add_argument('--data_dir', type=str, default='dataset',
-                        help="root path to data directory")
-    parser.add_argument('--workers', default=4, type=int,
-                       help="number of data loading workers (default: 4)")
+    parser.add_argument('--data_dir', type=str, default='dataset', help="root path to data directory")
+    parser.add_argument('--workers', default=4, type=int, help="number of data loading workers (default: 4)")
 
     '''Training parameters'''
-    parser.add_argument('--epoch', default=500, type=int,
+    parser.add_argument('--epoch', default=700, type=int,
                         help="num of total epochs")
-    parser.add_argument('--train_batch', default=15, type=int,
+    parser.add_argument('--train_batch', default=10, type=int,
                         help="train batch size")
     parser.add_argument('--test_batch', default=40, type=int,
                         help="query batch size")
-    parser.add_argument('--val_epoch', default=4, type=int,
+    parser.add_argument('--val_epoch', default=3, type=int,
                         help="num of epochs a val is run")
     parser.add_argument('--save_dir', type=str, default='log')
-    parser.add_argument('--label_group', default=6, type=int,
+    parser.add_argument('--label_group', default=4, type=int,
                         help="Number of grouped images with the same label")
-    parser.add_argument('--global_mult', default=1.7, type=float,
+    parser.add_argument('--global_mult', default=2, type=float,
                         help="Multiplyer of global losses")
     parser.add_argument('--local_mult', default=1, type=float,
                         help="Multiplyer of local losses")
@@ -39,7 +37,7 @@ def arg_parse():
 
 
     '''Optimizer params'''
-    parser.add_argument('--lr', default=0.0001, type=float,
+    parser.add_argument('--lr', default=0.0003, type=float,
                        help="initial learning rate")
     parser.add_argument('--weight-decay', default=0.0005, type=float,
                         help="initial Weight Decay")
@@ -47,7 +45,7 @@ def arg_parse():
                         help="initial learning rate")
 
     '''Optional Improvements'''
-    parser.add_argument('--lr_change', default=0, type=bool,
+    parser.add_argument('--lr_change', default=1, type=bool,
                         help="Change learning rate or not")
     parser.add_argument('--grouping', default=True, type=bool,
                         help="Groups the images in same categories or not")
