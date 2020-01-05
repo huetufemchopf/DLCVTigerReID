@@ -4,6 +4,7 @@ import torchvision.transforms as transforms
 from operator import itemgetter
 from torch.utils.data import Dataset
 from PIL import Image
+from data_utils import RandomErasing
 import torch
 import random
 
@@ -89,10 +90,11 @@ class DATA(Dataset):
         ''' set up image trainsform '''
         self.transform = transforms.Compose([
             transforms.Resize(img_size),
-            transforms.RandomHorizontalFlip(p=0.5),
+            #transforms.RandomHorizontalFlip(p=0.5),
             transforms.CenterCrop(img_size),
             transforms.ToTensor(),
-            transforms.Normalize(MEAN, STD)
+            transforms.Normalize(MEAN, STD),
+            RandomErasing
         ])
 
         self.transform_t = transforms.Compose([
@@ -125,7 +127,8 @@ class DATA(Dataset):
         ''' read image '''
         return images, cls
 
-#Dataloader with random geting of images from the same label, slight difference.
+
+# Dataloader with random geting of images from the same label, slight difference.
 class DATA2(Dataset):
     def __init__(self, args, mode='train'):
 
@@ -147,17 +150,18 @@ class DATA2(Dataset):
             data_S.sort(key=itemgetter(0))
 
             # Change labels to go from 0 to number of different labels
-            '''
+            last_num = -1
+            idx = -1
             for i in range(len(data_S)):
                 if data_S[i][0] != last_num:
                     idx += 1
                     last_num = data_S[i][0]
                 data_S[i][0] = idx
-            '''
+
             last_num = -1
             self.data = []
             for i in range(len(data_S)):
-                if(data_S[i][0] != last_num):
+                if (data_S[i][0] != last_num):
                     self.data.append([])
                 self.data[-1].append(data_S[i])
                 last_num = data_S[i][0]
@@ -171,6 +175,7 @@ class DATA2(Dataset):
             transforms.CenterCrop(img_size),
             transforms.ToTensor(),
             transforms.Normalize(MEAN, STD)
+            # RandomErasing
         ])
 
         self.transform_t = transforms.Compose([
@@ -202,3 +207,37 @@ class DATA2(Dataset):
 
         ''' read image '''
         return images, cls
+
+
+#Dataloader with random geting of images from the same label, slight difference.
+class DATA_un(Dataset):
+    def __init__(self, args):
+
+        ''' set up basic parameters for dataset '''
+        self.args = args
+        data_dir = args.data_dir
+        csv_path = os.path.join(data_dir, 'train_unlabeled.csv')
+        self.img_dir = os.path.join(data_dir, 'imgs')
+
+        self.imgs_names = read_csv(csv_path)[0]
+
+        img_size = 224
+        ''' set up image transform '''
+        self.transform = transforms.Compose([
+            transforms.Resize(img_size),
+            transforms.CenterCrop(img_size),
+            transforms.ToTensor(),
+            transforms.Normalize(MEAN, STD)
+        ])
+
+    def __len__(self):
+        return len(self.imgs_names)
+
+    def __getitem__(self, idx):
+
+
+        img = Image.open(os.path.join(self.img_dir, self.imgs_names[idx])).convert('RGB')
+        images = self.transform(img)
+
+        ''' read image '''
+        return images, self.imgs_names[idx]

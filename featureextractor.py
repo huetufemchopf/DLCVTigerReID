@@ -9,10 +9,10 @@ import torch.nn.functional as F
 class Model(nn.Module):
     def __init__(self, local_conv_out_channels=128, num_classes=1000):
         super(Model, self).__init__()
-        self.base = models.densenet121(pretrained=True).features
-        # self.base = nn.Sequential(*list(self.base.children())[:-2])
+        self.base = models.resnet50(pretrained=True)
+        self.base = nn.Sequential(*list(self.base.children())[:-2])
 
-        planes = 1024
+        planes = 2048
         self.bn = nn.BatchNorm1d(planes)
 
         self.local_conv = nn.Conv2d(planes, local_conv_out_channels, 1)
