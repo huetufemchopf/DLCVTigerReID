@@ -73,23 +73,18 @@ if __name__ == '__main__':
         avg_loss = 0
         if args.lr_change:
             # Changing learning rate
-            '''
-            lr_diff = ((args.lr*10)-args.lr)/args.lr_epochs
+            lr_diff = ((args.lr*3)-args.lr)/args.lr_epochs
             if (epoch < args.lr_epochs+2) & (epoch != 1):
                 lr = lr + lr_diff
                 print('Changing lr to:', lr)
                 for g in optimizer.param_groups:
                     g['lr'] = lr
-            elif (epoch > args.lr_epochs) & (epoch % 100 == 0):
-                lr = lr * 0.5
+            else:
+                lr = lr * 0.996
                 print('Changing lr to:', lr)
                 for g in optimizer.param_groups:
                     g['lr'] = lr
-            '''
-            lr = lr * 0.994
-            print('Changing lr to:', lr)
-            for g in optimizer.param_groups:
-                g['lr'] = lr
+
         for idx, (imgs, cls) in enumerate(train_loader):
             if args.grouping:
                 all_img, all_labels = group_imgs(imgs, cls)
@@ -136,7 +131,8 @@ if __name__ == '__main__':
             ''' evaluate the model '''
             model.eval()
             acc, acc_c = get_acc(model, query_loader, gallery_loader)
-            writer.add_scalar('val_acc', acc, iters)
+            writer.add_scalar('val_acc_MSE', acc, iters)
+            writer.add_scalar('val_acc_Cos', acc_c, iters)
             print('Epoch: [{}] ACC with MSE:{} (max:{})'.format(epoch, acc, best_acc))
             print('Epoch: [{}] ACC with Cosine:{} (max:{})'.format(epoch, acc_c, best_acc_cos))
 

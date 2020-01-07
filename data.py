@@ -4,7 +4,6 @@ import torchvision.transforms as transforms
 from operator import itemgetter
 from torch.utils.data import Dataset
 from PIL import Image
-from data_utils import RandomErasing
 import torch
 import random
 
@@ -86,7 +85,7 @@ class DATA(Dataset):
                 last_num = data_S[i][0]
         else:
             self.data = data_F
-        img_size = 256
+        img_size = 224
         ''' set up image trainsform '''
         self.transform = transforms.Compose([
             transforms.Resize(img_size),
@@ -94,12 +93,11 @@ class DATA(Dataset):
             transforms.CenterCrop(img_size),
             transforms.ToTensor(),
             transforms.Normalize(MEAN, STD),
-            RandomErasing
         ])
 
         self.transform_t = transforms.Compose([
             transforms.Resize(img_size),
-            transforms.CenterCrop(img_size),
+            #transforms.CenterCrop(img_size),
             transforms.ToTensor(),
             transforms.Normalize(MEAN, STD)
         ])
@@ -150,12 +148,13 @@ class DATA2(Dataset):
             data_S.sort(key=itemgetter(0))
 
             # Change labels to go from 0 to number of different labels
+
             last_num = -1
-            idx = -1
+            idx = 0
             for i in range(len(data_S)):
                 if data_S[i][0] != last_num:
-                    idx += 1
                     last_num = data_S[i][0]
+                    idx += 10
                 data_S[i][0] = idx
 
             last_num = -1
@@ -165,6 +164,17 @@ class DATA2(Dataset):
                     self.data.append([])
                 self.data[-1].append(data_S[i])
                 last_num = data_S[i][0]
+            '''
+            lengths = []
+            for i in range(len(self.data)):
+                lengths.append(len(self.data[i]))
+             
+            for i in range(len(self.data)):
+                rep = int(len(self.data[i])/self.args.label_group)
+                if rep > 1:
+                    for e in range(rep-1):
+                        self.data.append(self.data[i])
+            '''
         else:
             self.data = data_F
         img_size = 224
@@ -172,10 +182,11 @@ class DATA2(Dataset):
         self.transform = transforms.Compose([
             transforms.Resize(img_size),
             #transforms.RandomHorizontalFlip(p=0.5),
-            transforms.CenterCrop(img_size),
+            #transforms.Pad(5),
+            transforms.RandomCrop((img_size, img_size)),
             transforms.ToTensor(),
-            transforms.Normalize(MEAN, STD)
-            # RandomErasing
+            transforms.Normalize(MEAN, STD),
+            #RandomErasing()
         ])
 
         self.transform_t = transforms.Compose([

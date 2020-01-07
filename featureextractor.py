@@ -97,6 +97,7 @@ class Model2(nn.Module):
 
 
 # Model with global and local horizontal features
+# Model with global and local (vertical and horizontal) features
 class Model3(nn.Module):
     def __init__(self, local_conv_out_channels=128, num_classes=1000):
         super(Model3, self).__init__()
@@ -104,11 +105,15 @@ class Model3(nn.Module):
         self.base = nn.Sequential(*list(self.base.children())[:-2])
 
         planes = 2048
-        #self.bn = nn.InstanceNorm1d(planes)
+        self.bn = nn.BatchNorm1d(planes)
 
         self.local_conv = nn.Conv2d(planes, local_conv_out_channels, 1)
-        self.local_bn = nn.InstanceNorm2d(local_conv_out_channels)
+        self.local_bn = nn.BatchNorm2d(local_conv_out_channels)
         self.local_relu = nn.ReLU(inplace=True)
+
+        self.local_vert_conv = nn.Conv2d(planes, local_conv_out_channels, 1)
+        self.local_vert_bn = nn.BatchNorm2d(local_conv_out_channels)
+        self.local_vert_relu = nn.ReLU(inplace=True)
 
         self.fc = nn.Linear(planes, num_classes)
         init.normal_(self.fc.weight, std=0.001)
@@ -126,12 +131,5 @@ class Model3(nn.Module):
         global_feat = F.avg_pool2d(feat, feat.size()[2:])
         # shape [N, C]
         global_feat = global_feat.view(global_feat.size(0), -1)
-        #global_feat_bn = self.bn(global_feat)
-        # shape [N, C, H, 1]44
-        local_feat = torch.mean(feat, -1, keepdim=True)
-        local_feat = self.local_relu(self.local_bn(self.local_conv(local_feat)))
-        # shape [N, H, c]
-        local_feat = local_feat.squeeze(-1).permute(0, 2, 1)
 
-        logits = self.fc(global_feat)
-        return global_feat, local_feat, logits
+        return global_feat
