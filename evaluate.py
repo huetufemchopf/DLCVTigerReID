@@ -67,7 +67,49 @@ def get_acc(model, query, gallery):
     g_csv = read_csv('dataset/gallery.csv')
     acc = evaluate(q_csv.values, g_csv.values, array(preds))
     acc_c = evaluate(q_csv.values, g_csv.values, array(preds_c))
+
     return acc, acc_c
+
+def get_output(model, query, gallery):
+    with torch.no_grad():
+        q_arr = []
+        q_name = 0
+        for g_img, g_name in gallery:
+            g_img = g_img.cuda()
+            q_name = g_name
+            g_out, _, _, _ = model(g_img)
+            for idx, (imgs, _) in enumerate(query):
+                imgs = imgs.cuda()
+                output, _, _, _ = model(imgs)
+                q_arr.append(output)
+
+        q_arr = torch.cat(q_arr)
+        preds = []
+        preds_c = []
+    #     for q in q_arr:
+    #         # min_e has to be 0 for cosine similarity and a big number for MSELoss
+    #         min_e = 9999
+    #         pred = ''
+    #         max_e = 0
+    #         pred_c = ''
+    #         for g, n in zip(g_out, q_name):
+    #             error = loss(q, g)
+    #             error_c = loss_c(q, g)
+    #             # > for cosine, < for MSE
+    #             if error < min_e:
+    #                 min_e = error
+    #                 pred = n
+    #             if error_c > max_e:
+    #                 max_e = error_c
+    #                 pred_c = n
+    #         preds.append(pred)
+    #         preds_c.append(pred_c)
+    #
+    # acc = evaluate(q_csv.values, g_csv.values, array(preds))
+    # acc_c = evaluate(q_csv.values, g_csv.values, array(preds_c))
+
+    return q_arr
+
 
 
 if __name__ == '__main__':
