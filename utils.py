@@ -48,6 +48,7 @@ def loader(args):
 
     return train_loader, gallery_loader, query_loader
 
+
 def group_imgs(imgs, cls):
     all_img = []
     all_labels = []
@@ -60,4 +61,3 @@ def group_imgs(imgs, cls):
     all_img = torch.stack(all_img).cuda()
     all_labels = torch.stack(all_labels)
     return all_img, all_labels
-

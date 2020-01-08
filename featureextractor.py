@@ -13,6 +13,10 @@ class Model(nn.Module):
         self.base = models.densenet121(pretrained=True).features
         # self.base = nn.Sequential(*list(self.base.children())[:-2])
         planes = 1024
+        #self.base = models.resnet50(pretrained=True)
+        #self.base = nn.Sequential(*list(self.base.children())[:-2])
+
+       # planes = 2048
         self.bn = nn.BatchNorm1d(planes)
 
         self.local_conv = nn.Conv2d(planes, local_conv_out_channels, 1)
