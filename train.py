@@ -2,7 +2,7 @@ import os
 import torch
 
 import parser1
-from featureextractor import Model, Model2
+from featureextractor import Model
 import numpy as np
 import torch.nn as nn
 from tensorboardX import SummaryWriter
@@ -11,7 +11,9 @@ from triplet_loss import TripletLoss, get_dist, get_dist_local
 from evaluate import get_acc
 from utils import loader, group_imgs
 
+
 mgpus = False
+
 
 def save_model(mod, save_path):
     if mgpus:
@@ -63,7 +65,6 @@ if __name__ == '__main__':
     best_acc_cos = 0
     long = len(train_loader)
     print_num = int(long/2)
-    #print_num = 6
     lr = args.lr
 
     print('===> start training ...')
@@ -73,14 +74,14 @@ if __name__ == '__main__':
         avg_loss = 0
         if args.lr_change:
             # Changing learning rate
-            lr_diff = ((args.lr*3)-args.lr)/args.lr_epochs
+            lr_diff = ((args.lr*2.5)-args.lr)/args.lr_epochs
             if (epoch < args.lr_epochs+2) & (epoch != 1):
                 lr = lr + lr_diff
                 print('Changing lr to:', lr)
                 for g in optimizer.param_groups:
                     g['lr'] = lr
             else:
-                lr = lr * 0.996
+                lr = lr * 0.997
                 print('Changing lr to:', lr)
                 for g in optimizer.param_groups:
                     g['lr'] = lr
@@ -92,10 +93,8 @@ if __name__ == '__main__':
                 all_img, all_labels = imgs.cuda(), cls
 
             ''' forward path '''
-            global_f, local_f, vertical_f, classes = model(all_img) #For model 1
-            global_f, local_f, vertical_f, classes = global_f.cpu(), local_f.cpu(), vertical_f.cpu(), classes.cpu() #For model 1
-            # global_f, local_f, classes = model(all_img) #For model 2
-            #global_f, local_f, classes = global_f.cpu(), local_f.cpu(), classes.cpu()
+            global_f, local_f, vertical_f, classes = model(all_img)
+            global_f, local_f, vertical_f, classes = global_f.cpu(), local_f.cpu(), vertical_f.cpu(), classes.cpu()
 
             ''' compute loss, back propagation, update parameters '''
             # Global losses
@@ -120,6 +119,7 @@ if __name__ == '__main__':
             optimizer.step()  # update parameters
             avg_loss += loss
             ''' write out information to tensorboard '''
+            iters += 1
             writer.add_scalar('loss', loss.data.cpu().numpy(), iters)
 
             if (idx+1) % print_num == 0:

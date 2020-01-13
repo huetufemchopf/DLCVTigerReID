@@ -27,6 +27,26 @@ def evaluate(query, gallery, pred):
     return accuracy_score(qurey_id, pred_id)*100
 
 
+def evaluate_top5(query, gallery, pred):
+    assert query.shape[0] == pred.shape[0]
+
+    pred = pred.squeeze()
+    qurey_id = query[:, 0].tolist()
+    pred_id = []
+    gallery_dic = dict(zip(gallery[:, 1], gallery[:, 0]))
+
+    for idx, ps in enumerate(pred):
+        pred_id.append([])
+        for p in ps:
+            pred_id[idx].append(gallery_dic[p])
+    total = 0
+    correct = 0
+    for i in range(len(qurey_id)):
+        total += 1
+        if qurey_id[i] in pred_id[i]:
+            correct += 1
+    return (correct/total) * 100
+
 def get_acc(model, query, gallery):
     with torch.no_grad():
         q_arr = []
@@ -37,10 +57,10 @@ def get_acc(model, query, gallery):
             g_img = g_img.cuda()
             q_name = g_name
             g_out, _, _, _ = model(g_img)
-            for idx, (imgs, _) in enumerate(query):
-                imgs = imgs.cuda()
-                output, _, _, _ = model(imgs)
-                q_arr.append(output)
+        for idx, (imgs, _) in enumerate(query):
+            imgs = imgs.cuda()
+            output, _, _, _ = model(imgs)
+            q_arr.append(output)
 
         q_arr = torch.cat(q_arr)
         preds = []
@@ -124,7 +144,7 @@ if __name__ == '__main__':
     ''' read csv files '''
     query = read_csv('dataset/query.csv')
     gallery = read_csv('dataset/gallery.csv')
-    pred = read_csv('prueba.csv')
+    pred = read_csv('log/predict.csv')
 
     rank1 = evaluate(query.values, gallery.values, pred.values)
     

@@ -15,27 +15,6 @@ def read_csv(csv_path):
     return pd.read_csv(csv_path, header=None, index_col=False)
 
 
-def trans(img):
-    w, h = img.size
-    if h > w:
-        diff = int((h-w)/2)
-        transform_input = transforms.Compose([
-            transforms.Pad((diff, 0), fill=0, padding_mode='constant'),
-            transforms.Resize((224, 224)),
-            transforms.ToTensor(),
-            transforms.Normalize(MEAN, STD)
-        ])
-    else:
-        diff = int((w-h)/2)
-        transform_input = transforms.Compose([
-            transforms.Pad((0, diff), fill=0, padding_mode='constant'),
-            transforms.Resize((224, 224)),
-            transforms.ToTensor(),
-            transforms.Normalize(MEAN, STD)
-        ])
-    return transform_input(img)
-
-
 class DATA(Dataset):
     def __init__(self, args, mode='train'):
 
@@ -154,7 +133,7 @@ class DATA2(Dataset):
             for i in range(len(data_S)):
                 if data_S[i][0] != last_num:
                     last_num = data_S[i][0]
-                    idx += 10
+                    idx += 5
                 data_S[i][0] = idx
 
             last_num = -1
@@ -164,17 +143,7 @@ class DATA2(Dataset):
                     self.data.append([])
                 self.data[-1].append(data_S[i])
                 last_num = data_S[i][0]
-            '''
-            lengths = []
-            for i in range(len(self.data)):
-                lengths.append(len(self.data[i]))
-             
-            for i in range(len(self.data)):
-                rep = int(len(self.data[i])/self.args.label_group)
-                if rep > 1:
-                    for e in range(rep-1):
-                        self.data.append(self.data[i])
-            '''
+
         else:
             self.data = data_F
         img_size = 224
@@ -186,7 +155,6 @@ class DATA2(Dataset):
             transforms.RandomCrop((img_size, img_size)),
             transforms.ToTensor(),
             transforms.Normalize(MEAN, STD),
-            #RandomErasing()
         ])
 
         self.transform_t = transforms.Compose([
@@ -205,10 +173,12 @@ class DATA2(Dataset):
         if self.mode == 'train':
             images = []
             random_ids = random.sample(range(0, len(self.data[idx])), self.args.label_group)
+            #rand = bool(random.getrandbits(1))
             for i in random_ids:
                 cls, img_path = self.data[idx][i][0], self.data[idx][i][1]
                 img = Image.open(img_path).convert('RGB')
                 img_t = self.transform(img)
+                #img_t = trans(img, rand)
                 images.append(img_t)
             images = torch.stack(images)
         else:
@@ -246,9 +216,48 @@ class DATA_un(Dataset):
 
     def __getitem__(self, idx):
 
-
         img = Image.open(os.path.join(self.img_dir, self.imgs_names[idx])).convert('RGB')
         images = self.transform(img)
 
         ''' read image '''
         return images, self.imgs_names[idx]
+
+
+# Dataloader with random geting of images from the same label, slight difference.
+class DATA_final(Dataset):
+    def __init__(self, args, mode = 'query'):
+
+        ''' set up basic parameters for dataset '''
+        self.args = args
+        if mode == 'query':
+            csv = args.query_dir
+        else:
+            csv = args.gallery_dir
+
+        self.imgs_dirs = read_csv(csv)[0]
+        self.imgs_names = read_csv(csv)[0]
+        for i in range(len(self.imgs_names)):
+            self.imgs_dirs[i] = os.path.join(args.img_dir, self.imgs_dirs[i])
+
+        img_size = 224
+        ''' set up image trainsform '''
+
+        self.transform = transforms.Compose([
+            transforms.Resize(img_size),
+            transforms.CenterCrop(img_size),
+            transforms.ToTensor(),
+            transforms.Normalize(MEAN, STD)
+        ])
+
+    def __len__(self):
+        return len(self.imgs_dirs)
+
+    def __getitem__(self, idx):
+
+        ''' get data '''
+        img = Image.open(self.imgs_dirs[idx]).convert('RGB')
+        images = self.transform(img)
+        cls = self.imgs_names[idx]
+
+        ''' read image '''
+        return images, cls

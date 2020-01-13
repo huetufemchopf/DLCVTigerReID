@@ -9,7 +9,7 @@ import random
 import parser1
 import data
 import csv
-from featureextractor import Model, Model2
+from featureextractor import Model
 
 
 if __name__ == '__main__':
@@ -73,13 +73,13 @@ if __name__ == '__main__':
             name_ids.append([label, top_preds[i][0]])
             label += 1
         else:
-            if(any(top_preds[i][1] == ii[1] for ii in name_ids)):
-                if (any(top_preds[i][0] == ii[1] for ii in name_ids) == False):
+            if any(top_preds[i][1] == ii[1] for ii in name_ids):
+                if not any(top_preds[i][0] == ii[1] for ii in name_ids):
                     item = [item[0] for item in name_ids if item[1] == top_preds[i][1]]
                     item, = item
                     name_ids.append([item, top_preds[i][0]])
             else:
-                if (any(top_preds[i][0] == i2[1] for i2 in name_ids)==False):
+                if not any(top_preds[i][0] == i2[1] for i2 in name_ids):
                     name_ids.append([label,top_preds[i][1]])
                     name_ids.append([label,top_preds[i][0]])
                     label += 1
@@ -88,7 +88,7 @@ if __name__ == '__main__':
                     item, = item
                     name_ids.append([item, top_preds[i][1]])
 
-    count_z = [0] * 250
+    count_z = [0] * 1000
     ind_list = []
     for i in range(len(name_ids)):
         count_z[name_ids[i][0]] += 1
@@ -97,7 +97,7 @@ if __name__ == '__main__':
             ind_list.append(i)
     final_range = []
     for i in range(len(name_ids)):
-        if (name_ids[i][0] in ind_list):
+        if name_ids[i][0] in ind_list:
             final_range.append(name_ids[i])
 
     image_name_final = [name_arr[i[1]] for i in final_range]
