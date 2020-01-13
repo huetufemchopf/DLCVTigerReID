@@ -63,7 +63,7 @@ def arg_parse():
                         help="root path to data directory")
     parser.add_argument('--gallery_dir', type=str, default='dataset/gallery2.csv',
                         help="root path to data directory")
-    parser.add_argument('--csv_dir', type=str, default='log/predict.csv',
+    parser.add_argument('--csv_dir', type=str, default='predict.csv',
                         help="root path to data directory")
 
     args = parser.parse_args()

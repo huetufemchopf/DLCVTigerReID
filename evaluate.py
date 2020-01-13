@@ -142,9 +142,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     ''' read csv files '''
-    query = read_csv('dataset/query.csv')
-    gallery = read_csv('dataset/gallery.csv')
-    pred = read_csv('log/predict.csv')
+    query = read_csv(args.query)
+    gallery = read_csv(args.gallery)
+    pred = read_csv(args.pred)
 
     rank1 = evaluate(query.values, gallery.values, pred.values)
     
